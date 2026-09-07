@@ -1,0 +1,36 @@
+{
+  "name": "Indiabulls Securities Community Theme",
+  "component": false,
+  "about_url": "https://github.com/SumitBagewadi-IB/Community-Indiabullssecurities",
+  "assets": {
+    "logo-dark-svg": "assets/images/ib_logo_darkbg.svg",
+    "logo-light-png": "assets/images/ib_light_logo.png"
+  },
+  "color_schemes": {
+    "Indiabulls Securities": {
+      "primary": "1A1A1A",
+      "secondary": "FFFFFF",
+      "tertiary": "00AB4E",
+      "quaternary": "11A971",
+      "header_background": "0A0A0A",
+      "header_primary": "FFFFFF",
+      "highlight": "00C076",
+      "danger": "DC2626",
+      "success": "00AB4E",
+      "love": "FA6C8D"
+    },
+    "Indiabulls Securities Dark": {
+      "primary": "F5F5F5",
+      "secondary": "0A0A0A",
+      "tertiary": "00C076",
+      "quaternary": "11A971",
+      "header_background": "000000",
+      "header_primary": "FFFFFF",
+      "highlight": "17D061",
+      "danger": "F87171",
+      "success": "00C076",
+      "love": "FB7185"
+    }
+  },
+  "learn_more": "https://meta.discourse.org/t/beginner-s-guide-to-using-discourse-themes/91966"
+}

@@ -1,0 +1,6 @@
+en:
+  theme_metadata:
+    description: "Brand theme for the Indiabulls Securities community, matching the colors, typography and footer of indiabullssecurities.com."
+  show_ib_footer: "Show the Indiabulls Securities branded footer block at the bottom of every page"
+  footer_disclaimer_text: "Regulatory disclaimer text shown in the community footer"
+  footer_links_label: "Label shown above the footer link column"

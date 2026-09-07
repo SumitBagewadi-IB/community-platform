@@ -1,0 +1,9 @@
+show_ib_footer:
+  default: true
+
+footer_disclaimer_text:
+  default: "Investments in securities market are subject to market risks. Read all the related documents carefully before investing. [PLACEHOLDER — replace with the current SEBI/compliance-approved disclaimer and registration numbers before going live.]"
+  textarea: true
+
+footer_links_label:
+  default: "Indiabulls Securities"

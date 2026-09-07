@@ -1,0 +1,164 @@
+// ==========================================================================
+// Indiabulls Securities Community Theme
+// Design tokens below were extracted from the live indiabullssecurities.com
+// Next.js build (colors, font families, corner radii) so the community
+// forum reads as part of the same brand.
+// ==========================================================================
+
+$ib-font-heading: "Poppins", $font-family;
+$ib-font-body: "Manrope", $font-family;
+
+$ib-radius-sm: 0.5rem; // buttons
+$ib-radius-md: 0.75rem; // topic rows, small cards
+$ib-radius-lg: 1rem; // category boxes, panels
+$ib-radius-xl: 1.5rem; // large surfaces (modals, footer)
+
+$ib-green-brand: #00ab4e; // primary brand green — literal fill color of the IB logo mark
+$ib-green-accent: #11a971;
+$ib-green-bright: #00c076;
+$ib-green-deep: #18874a;
+
+// ---- Typography ----------------------------------------------------------
+body {
+  font-family: $ib-font-body;
+}
+
+h1, h2, h3, h4, h5, h6,
+.title,
+.topic-title,
+.badge-category__name,
+.nav-pills li a,
+.btn,
+.d-header .title {
+  font-family: $ib-font-heading;
+}
+
+a {
+  color: $tertiary;
+
+  &:hover {
+    color: $ib-green-deep;
+  }
+}
+
+// ---- Header ----------------------------------------------------------
+.d-header {
+  background: $header_background;
+  border-bottom: 1px solid rgba($header_primary, 0.08);
+
+  #site-logo,
+  .title .logo-big,
+  .title .logo-small {
+    content: url($logo-dark-svg);
+    max-height: 38px;
+    width: auto;
+  }
+}
+
+// ---- Buttons -----------------------------------------------------------
+.btn {
+  border-radius: $ib-radius-sm;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: $ib-green-brand;
+
+  &:hover,
+  &:focus {
+    background: $ib-green-deep;
+  }
+}
+
+// ---- Cards / topic list / category boxes --------------------------------
+.topic-list .topic-list-item,
+.user-card,
+.d-modal .modal-container,
+.about.boxed {
+  border-radius: $ib-radius-md;
+}
+
+.category-box,
+.category-boxes-with-topics .category-box {
+  border-radius: $ib-radius-lg;
+  overflow: hidden;
+}
+
+// ---- Badges / highlights --------------------------------------------------
+.badge-notification,
+.unread-indicator {
+  background: $ib-green-bright;
+}
+
+kbd {
+  border-radius: $ib-radius-sm * 0.5;
+}
+
+// ---- Footer ----------------------------------------------------------
+.ib-community-footer {
+  background: $header_background;
+  color: $header_primary;
+  margin-top: 3rem;
+  padding: 2.5rem 1.5rem 1.5rem;
+  border-radius: $ib-radius-xl $ib-radius-xl 0 0;
+
+  .ib-footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .ib-footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .ib-footer-logo {
+    display: inline-block;
+    width: 84px;
+    height: 28px;
+    background-image: url($logo-dark-svg);
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: left center;
+  }
+
+  .ib-footer-label {
+    font-family: $ib-font-heading;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .ib-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+
+    a {
+      color: $header_primary;
+      opacity: 0.75;
+      text-decoration: none;
+      font-size: 0.9rem;
+
+      &:hover {
+        opacity: 1;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .ib-footer-disclaimer {
+    max-width: 1100px;
+    margin: 1.5rem auto 0;
+    padding-top: 1rem;
+    border-top: 1px solid rgba($header_primary, 0.12);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    opacity: 0.6;
+  }
+}
