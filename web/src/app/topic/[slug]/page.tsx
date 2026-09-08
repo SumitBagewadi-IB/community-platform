@@ -1,29 +1,41 @@
+"use client";
+
+import { useEffect } from "react";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import CategoryBadge from "@/components/CategoryBadge";
 import LikeButton from "@/components/LikeButton";
 import ReplyBar from "@/components/ReplyBar";
-import { getCategory, getTopic, topics } from "@/lib/data";
+import { useData } from "@/components/DataProvider";
+import { useUI } from "@/components/UIProvider";
+import { getCategory } from "@/lib/data";
 
-export function generateStaticParams() {
-  return topics.map((topic) => ({ slug: topic.slug }));
-}
-
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default function TopicPage() {
+  const { slug } = useParams<{ slug: string }>();
+  const { getTopic } = useData();
+  const { requestComposer, showToast } = useUI();
   const topic = getTopic(slug);
-  return {
-    title: topic ? `${topic.title} — Indiabulls Securities Community` : "Topic not found",
-  };
-}
 
-export default async function TopicPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const topic = getTopic(slug);
+  useEffect(() => {
+    if (topic) document.title = `${topic.title} — Indiabulls Securities Community`;
+  }, [topic]);
+
   if (!topic) notFound();
 
   const category = getCategory(topic.categorySlug);
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/topic/${topic.slug}`;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(
+        () => showToast("Link copied to clipboard"),
+        () => showToast("Couldn't copy link")
+      );
+    } else {
+      showToast("Copy isn't supported in this browser");
+    }
+  };
 
   return (
     <div className="container">
@@ -31,7 +43,8 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
         <Sidebar />
         <main>
           <div className="breadcrumb">
-            <Link href="/">Latest</Link> &rsaquo; <a href="#">{category?.name}</a>
+            <Link href="/">Latest</Link> &rsaquo;{" "}
+            <Link href={`/c/${topic.categorySlug}`}>{category?.name}</Link>
           </div>
 
           <div className="topic-header">
@@ -56,15 +69,17 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
                   </div>
                   <div className="post-actions">
                     <LikeButton initialLikes={post.likes} />
-                    <button>&#8617; Reply</button>
-                    <button>&#128279; Share</button>
+                    <button onClick={() => requestComposer("reply", topic.slug)}>
+                      &#8617; Reply
+                    </button>
+                    <button onClick={handleShare}>&#128279; Share</button>
                   </div>
                 </div>
               </article>
             ))}
           </div>
 
-          <ReplyBar />
+          <ReplyBar topicSlug={topic.slug} />
         </main>
       </div>
     </div>

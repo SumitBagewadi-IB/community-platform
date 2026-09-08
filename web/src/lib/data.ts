@@ -242,6 +242,8 @@ export function getCategory(slug: string): Category | undefined {
   return categories.find((c) => c.slug === slug);
 }
 
-export function getTopic(slug: string): Topic | undefined {
-  return topics.find((t) => t.slug === slug);
+export function parseCount(value: string): number {
+  const n = parseFloat(value);
+  if (Number.isNaN(n)) return 0;
+  return value.toLowerCase().includes("k") ? n * 1000 : n;
 }

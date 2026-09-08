@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -32,7 +33,7 @@ export default function Footer() {
             <a href="https://www.indiabullssecurities.com/ipo" target="_blank" rel="noopener noreferrer">
               IPO
             </a>
-            <a href="#">Community Guidelines</a>
+            <Link href="/guidelines">Community Guidelines</Link>
           </nav>
         </div>
       </div>

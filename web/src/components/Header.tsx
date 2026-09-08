@@ -2,11 +2,22 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { useUI } from "./UIProvider";
+import { useData } from "./DataProvider";
 
 export default function Header() {
-  const { openComposer, toggleSidebar } = useUI();
+  const { requestComposer, toggleSidebar, openSignIn } = useUI();
+  const { currentUser, signOut } = useData();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  const submitSearch = () => {
+    const q = query.trim();
+    router.push(q ? `/?q=${encodeURIComponent(q)}` : "/");
+  };
 
   return (
     <header className="site-header">
@@ -35,23 +46,43 @@ export default function Header() {
         </Link>
 
         <nav className="main-nav">
-          <Link href="/" className="active">
-            Latest
-          </Link>
-          <Link href="#">Categories</Link>
-          <Link href="#">Top</Link>
-          <Link href="#">Announcements</Link>
+          <Link href="/">Latest</Link>
+          <Link href="/categories">Categories</Link>
+          <Link href="/?sort=top">Top</Link>
+          <Link href="/c/announcements">Announcements</Link>
         </nav>
 
         <div className="search-box">
           <span>&#128269;</span>
-          <input type="text" placeholder="Search the community" aria-label="Search" />
+          <input
+            type="text"
+            placeholder="Search the community"
+            aria-label="Search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitSearch();
+            }}
+          />
         </div>
 
         <div className="header-actions">
           <ThemeToggle />
-          <button className="btn btn-ghost hide-on-mobile">Sign In</button>
-          <button className="btn btn-primary" onClick={() => openComposer("topic")}>
+          {currentUser ? (
+            <>
+              <span className="avatar" style={{ width: 30, height: 30, fontSize: "0.75rem" }}>
+                {currentUser.initials}
+              </span>
+              <button className="btn btn-ghost hide-on-mobile" onClick={signOut}>
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-ghost hide-on-mobile" onClick={openSignIn}>
+              Sign In
+            </button>
+          )}
+          <button className="btn btn-primary" onClick={() => requestComposer("topic")}>
             <span className="hide-on-mobile">+ New Topic</span>
             <span className="show-on-mobile">+ New</span>
           </button>

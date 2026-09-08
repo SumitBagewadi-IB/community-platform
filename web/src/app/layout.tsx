@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Manrope, Poppins } from "next/font/google";
 import "./globals.css";
-import { UIProvider } from "@/components/UIProvider";
+import { Providers } from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ComposerModal from "@/components/ComposerModal";
+import SignInModal from "@/components/SignInModal";
+import Toast from "@/components/Toast";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -20,9 +22,28 @@ const poppins = Poppins({
   display: "swap",
 });
 
+const title = "Indiabulls Securities Community";
+const description =
+  "Community forum for Indiabulls Securities investors and traders — markets discussion, IPOs, mutual funds, derivatives, and investor education.";
+
 export const metadata: Metadata = {
-  title: "Indiabulls Securities Community",
-  description: "Community forum for Indiabulls Securities investors and traders.",
+  title: {
+    default: title,
+    template: `%s — ${title}`,
+  },
+  description,
+  openGraph: {
+    title,
+    description,
+    siteName: title,
+    type: "website",
+    locale: "en_IN",
+  },
+  twitter: {
+    card: "summary",
+    title,
+    description,
+  },
 };
 
 const THEME_INIT_SCRIPT = `
@@ -41,12 +62,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
-        <UIProvider>
+        <Providers>
           <Header />
           {children}
           <Footer />
           <ComposerModal />
-        </UIProvider>
+          <SignInModal />
+          <Toast />
+        </Providers>
       </body>
     </html>
   );

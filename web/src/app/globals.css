@@ -192,6 +192,12 @@ button { font: inherit; }
 .btn-primary { background: var(--ib-green); color: #fff; }
 .btn-primary:hover { background: var(--ib-green-deep); color: #fff; }
 
+.btn:disabled, .pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary:disabled:hover { background: var(--ib-green); }
+
 .btn-ghost {
   background: transparent;
   border-color: rgba(255, 255, 255, 0.25);
