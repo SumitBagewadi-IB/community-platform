@@ -41,3 +41,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scratch scripts (admin one-offs run via tsx, never meant to be committed)
+scripts/_*.ts
