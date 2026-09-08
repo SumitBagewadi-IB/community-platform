@@ -1,19 +1,20 @@
 /* ==========================================================================
    Indiabulls Securities Community — Next.js frontend
-   Design tokens mirror the Discourse theme in the repo's /common/common.scss,
-   sourced from indiabullssecurities.com's live CSS (colors, fonts, radii).
+   Design tokens verified directly against the live computed styles of
+   indiabullssecurities.com (via a headless-browser audit) — brand green,
+   font family, and button shape were corrected to match exactly.
    UI structure (topic-list table, post-stream, composer) mirrors Discourse's
    own default theme conventions.
    ========================================================================== */
 
 :root {
-  --ib-green: #00ab4e;
-  --ib-green-accent: #11a971;
-  --ib-green-bright: #00c076;
-  --ib-green-deep: #18874a;
+  --ib-green: #17d061;
+  --ib-green-accent: #17d061;
+  --ib-green-bright: #17d061;
+  --ib-green-deep: #15803d;
   --ib-danger: #dc2626;
 
-  --ib-ink: #1a1a1a;
+  --ib-ink: #171717;
   --ib-header-bg: #0a0a0a;
   --ib-header-fg: #ffffff;
 
@@ -27,8 +28,9 @@
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
+  --radius-pill: 999px;
 
-  --font-heading: var(--font-poppins), -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-manrope), -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-body: var(--font-manrope), -apple-system, "Segoe UI", Roboto, sans-serif;
 
   color-scheme: light;
@@ -181,9 +183,9 @@ button { font: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.1rem;
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
