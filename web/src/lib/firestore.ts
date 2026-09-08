@@ -1,12 +1,16 @@
 import {
   collection,
   doc,
+  deleteDoc,
+  getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   arrayUnion,
   arrayRemove,
   Timestamp,
@@ -22,6 +26,7 @@ export type TopicSummary = {
   authorName: string;
   authorInitials: string;
   pinned: boolean;
+  locked: boolean;
   views: number;
   repliesCount: number;
   createdAt: Date;
@@ -53,78 +58,97 @@ function slugify(title: string): string {
   return base || "topic";
 }
 
-export function subscribeTopics(callback: (topics: TopicSummary[]) => void): Unsubscribe {
+export function subscribeTopics(
+  callback: (topics: TopicSummary[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe {
   const q = query(collection(db, "topics"), orderBy("lastActivityAt", "desc"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          slug: d.id,
-          title: data.title,
-          categorySlug: data.categorySlug,
-          authorId: data.authorId,
-          authorName: data.authorName,
-          authorInitials: data.authorInitials,
-          pinned: Boolean(data.pinned),
-          views: data.views ?? 0,
-          repliesCount: data.repliesCount ?? 0,
-          createdAt: toDate(data.createdAt),
-          lastActivityAt: toDate(data.lastActivityAt),
-        };
-      })
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            slug: d.id,
+            title: data.title,
+            categorySlug: data.categorySlug,
+            authorId: data.authorId,
+            authorName: data.authorName,
+            authorInitials: data.authorInitials,
+            pinned: Boolean(data.pinned),
+            locked: Boolean(data.locked),
+            views: data.views ?? 0,
+            repliesCount: data.repliesCount ?? 0,
+            createdAt: toDate(data.createdAt),
+            lastActivityAt: toDate(data.lastActivityAt),
+          };
+        })
+      );
+    },
+    (err) => onError?.(err)
+  );
 }
 
 export function subscribeTopic(
   slug: string,
-  callback: (topic: TopicSummary | null) => void
+  callback: (topic: TopicSummary | null) => void,
+  onError?: (err: Error) => void
 ): Unsubscribe {
-  return onSnapshot(doc(db, "topics", slug), (snap) => {
-    if (!snap.exists()) {
-      callback(null);
-      return;
-    }
-    const data = snap.data();
-    callback({
-      slug: snap.id,
-      title: data.title,
-      categorySlug: data.categorySlug,
-      authorId: data.authorId,
-      authorName: data.authorName,
-      authorInitials: data.authorInitials,
-      pinned: Boolean(data.pinned),
-      views: data.views ?? 0,
-      repliesCount: data.repliesCount ?? 0,
-      createdAt: toDate(data.createdAt),
-      lastActivityAt: toDate(data.lastActivityAt),
-    });
-  });
+  return onSnapshot(
+    doc(db, "topics", slug),
+    (snap) => {
+      if (!snap.exists()) {
+        callback(null);
+        return;
+      }
+      const data = snap.data();
+      callback({
+        slug: snap.id,
+        title: data.title,
+        categorySlug: data.categorySlug,
+        authorId: data.authorId,
+        authorName: data.authorName,
+        authorInitials: data.authorInitials,
+        pinned: Boolean(data.pinned),
+        locked: Boolean(data.locked),
+        views: data.views ?? 0,
+        repliesCount: data.repliesCount ?? 0,
+        createdAt: toDate(data.createdAt),
+        lastActivityAt: toDate(data.lastActivityAt),
+      });
+    },
+    (err) => onError?.(err)
+  );
 }
 
 export function subscribeTopicPosts(
   slug: string,
-  callback: (posts: Post[]) => void
+  callback: (posts: Post[]) => void,
+  onError?: (err: Error) => void
 ): Unsubscribe {
   const q = query(collection(db, "topics", slug, "posts"), orderBy("createdAt", "asc"));
-  return onSnapshot(q, (snap) => {
-    callback(
-      snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          authorId: data.authorId,
-          authorName: data.authorName,
-          authorInitials: data.authorInitials,
-          body: data.body,
-          isOp: Boolean(data.isOp),
-          likedBy: data.likedBy ?? [],
-          createdAt: toDate(data.createdAt),
-        };
-      })
-    );
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            authorId: data.authorId,
+            authorName: data.authorName,
+            authorInitials: data.authorInitials,
+            body: data.body,
+            isOp: Boolean(data.isOp),
+            likedBy: data.likedBy ?? [],
+            createdAt: toDate(data.createdAt),
+          };
+        })
+      );
+    },
+    (err) => onError?.(err)
+  );
 }
 
 type Author = { uid: string; name: string; initials: string };
@@ -203,4 +227,45 @@ export async function toggleLike(
 ): Promise<void> {
   const postRef = doc(db, "topics", topicSlug, "posts", postId);
   await setDoc(postRef, { likedBy: liked ? arrayRemove(uid) : arrayUnion(uid) }, { merge: true });
+}
+
+// ---- Moderation (admin-only; enforced by firestore.rules, not just the UI) ----
+
+export function subscribeIsAdmin(uid: string | null, callback: (isAdmin: boolean) => void): Unsubscribe {
+  if (!uid) {
+    callback(false);
+    return () => {};
+  }
+  return onSnapshot(
+    doc(db, "admins", uid),
+    (snap) => callback(snap.exists()),
+    () => callback(false)
+  );
+}
+
+export async function deletePost(topicSlug: string, postId: string): Promise<void> {
+  await deleteDoc(doc(db, "topics", topicSlug, "posts", postId));
+}
+
+export async function deleteTopic(topicSlug: string): Promise<void> {
+  const postsSnap = await getDocs(collection(db, "topics", topicSlug, "posts"));
+  await Promise.all(postsSnap.docs.map((d) => deleteDoc(d.ref)));
+  await deleteDoc(doc(db, "topics", topicSlug));
+}
+
+export async function setTopicLocked(topicSlug: string, locked: boolean): Promise<void> {
+  await updateDoc(doc(db, "topics", topicSlug), { locked });
+}
+
+export async function isUserBanned(uid: string): Promise<boolean> {
+  const snap = await getDoc(doc(db, "bannedUsers", uid));
+  return snap.exists();
+}
+
+export async function banUser(uid: string, reason: string): Promise<void> {
+  await setDoc(doc(db, "bannedUsers", uid), { reason, bannedAt: serverTimestamp() });
+}
+
+export async function unbanUser(uid: string): Promise<void> {
+  await deleteDoc(doc(db, "bannedUsers", uid));
 }

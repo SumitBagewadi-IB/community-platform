@@ -57,6 +57,9 @@ export default function ComposerModal() {
   return (
     <div
       className={`composer-modal${composerOpen ? " open" : ""}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={composerMode === "topic" ? "New Topic" : "Reply"}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
@@ -67,6 +70,7 @@ export default function ComposerModal() {
           <button
             className="icon-btn"
             onClick={handleClose}
+            aria-label="Close"
             style={{ color: "var(--ib-ink)", borderColor: "var(--ib-border)" }}
           >
             &times;

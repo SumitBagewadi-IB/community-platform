@@ -3,6 +3,31 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isBanned() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/bannedUsers/$(request.auth.uid));
+    }
+
+    // Admin/ban membership: readable only by the admins themselves (so the
+    // client can show/hide moderation UI), never writable from the client —
+    // managed only via the Admin SDK.
+    match /admins/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /bannedUsers/{uid} {
+      allow read: if isAdmin();
+      // Admins can ban/unban directly from the UI. Granting admin rights
+      // itself stays server-managed only (see /admins above) to avoid any
+      // self-escalation path.
+      allow write: if isAdmin();
+    }
+
     // Categories are curated, not user-created — public read, no client writes.
     match /categories/{categorySlug} {
       allow read: if true;
@@ -12,28 +37,46 @@ service cloud.firestore {
     match /topics/{topicSlug} {
       allow read: if true;
 
-      // Must be signed in, and can only author content as yourself.
+      // Must be signed in, not banned, and can only author content as
+      // yourself. Length caps guard against abusive giant payloads.
       allow create: if request.auth != null
+        && !isBanned()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.title is string
         && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 300
         && request.resource.data.categorySlug is string;
 
       // Replying bumps repliesCount/lastActivityAt on the parent topic;
-      // no editing title/author/category from the client.
+      // no editing title/author/category from the client. Admins may
+      // additionally set `locked` to close a topic to new replies.
       allow update: if request.auth != null
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['repliesCount', 'lastActivityAt', 'views']);
+        && (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['repliesCount', 'lastActivityAt', 'views'])
+          || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locked']))
+        );
 
-      allow delete: if false;
+      allow delete: if isAdmin();
 
       match /posts/{postId} {
         allow read: if true;
 
         allow create: if request.auth != null
+          && !isBanned()
           && request.resource.data.authorId == request.auth.uid
           && request.resource.data.body is string
-          && request.resource.data.body.size() > 0;
+          && request.resource.data.body.size() > 0
+          && request.resource.data.body.size() <= 10000
+          // A brand-new topic's first post is created in the same
+          // transaction as the topic doc itself, so it won't exist yet
+          // from this rule's point of view — treat "doesn't exist yet"
+          // as "not locked" rather than calling .data on a missing doc
+          // (which throws and denies the whole write).
+          && (
+            !exists(/databases/$(database)/documents/topics/$(topicSlug))
+            || get(/databases/$(database)/documents/topics/$(topicSlug)).data.get('locked', false) == false
+          );
 
         // Only the likedBy field may change post-creation (for likes),
         // and only by adding/removing the caller's own uid.
@@ -45,7 +88,7 @@ service cloud.firestore {
                  .difference(request.resource.data.likedBy.toSet()))
                .hasOnly([request.auth.uid]);
 
-        allow delete: if false;
+        allow delete: if isAdmin();
       }
     }
   }

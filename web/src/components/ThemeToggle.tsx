@@ -32,6 +32,7 @@ export default function ThemeToggle() {
       className="icon-btn"
       onClick={toggle}
       aria-pressed={theme === "dark"}
+      aria-label="Toggle dark mode"
       suppressHydrationWarning
       title="Toggle dark mode"
     >

@@ -8,7 +8,7 @@ import TopicTable, { Pill } from "@/components/TopicTable";
 import { useData } from "@/components/DataProvider";
 
 function HomeContent() {
-  const { topics, topicsLoading } = useData();
+  const { topics, topicsLoading, topicsError } = useData();
   const searchParams = useSearchParams();
   const q = searchParams.get("q")?.trim() ?? "";
   const sort = searchParams.get("sort") === "top" ? "top" : "latest";
@@ -50,7 +50,11 @@ function HomeContent() {
               <Link href="/">&larr; Clear search</Link>
             </p>
           )}
-          {topicsLoading ? (
+          {topicsError ? (
+            <div className="content-card">
+              <p style={{ padding: "2rem 1.25rem", color: "var(--ib-danger)", margin: 0 }}>{topicsError}</p>
+            </div>
+          ) : topicsLoading ? (
             <div className="content-card">
               <p style={{ padding: "2rem 1.25rem", color: "var(--ib-gray-500)", margin: 0 }}>
                 Loading topics…

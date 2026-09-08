@@ -6,6 +6,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  sendPasswordResetEmail,
   GoogleAuthProvider,
   updateProfile,
   signOut as firebaseSignOut,
@@ -14,9 +15,15 @@ import {
 import { auth } from "@/lib/firebase";
 import {
   subscribeTopics,
+  subscribeIsAdmin,
   createTopic,
   createReply,
   toggleLike as toggleLikeFn,
+  deletePost as deletePostFn,
+  deleteTopic as deleteTopicFn,
+  setTopicLocked as setTopicLockedFn,
+  banUser as banUserFn,
+  unbanUser as unbanUserFn,
   type TopicSummary,
 } from "@/lib/firestore";
 
@@ -41,15 +48,23 @@ function toSessionUser(user: FirebaseUser): SessionUser {
 type DataContextValue = {
   topics: TopicSummary[];
   topicsLoading: boolean;
+  topicsError: string | null;
   addTopic: (title: string, body: string, categorySlug: string) => Promise<string>;
   addReply: (topicSlug: string, body: string) => Promise<void>;
   toggleLike: (topicSlug: string, postId: string, currentlyLiked: boolean) => Promise<void>;
   currentUser: SessionUser | null;
   authLoading: boolean;
+  isAdmin: boolean;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  deletePost: (topicSlug: string, postId: string) => Promise<void>;
+  deleteTopic: (topicSlug: string) => Promise<void>;
+  setTopicLocked: (topicSlug: string, locked: boolean) => Promise<void>;
+  banUser: (uid: string, reason: string) => Promise<void>;
+  unbanUser: (uid: string) => Promise<void>;
 };
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -57,14 +72,24 @@ const DataContext = createContext<DataContextValue | null>(null);
 export function DataProvider({ children }: { children: ReactNode }) {
   const [topics, setTopics] = useState<TopicSummary[]>([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
+  const [topicsError, setTopicsError] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<SessionUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsub = subscribeTopics((t) => {
-      setTopics(t);
-      setTopicsLoading(false);
-    });
+    const unsub = subscribeTopics(
+      (t) => {
+        setTopics(t);
+        setTopicsLoading(false);
+        setTopicsError(null);
+      },
+      (err) => {
+        console.error("subscribeTopics failed:", err);
+        setTopicsLoading(false);
+        setTopicsError("Couldn't load topics right now — please refresh.");
+      }
+    );
     return unsub;
   }, []);
 
@@ -75,6 +100,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     return unsub;
   }, []);
+
+  useEffect(() => {
+    const unsub = subscribeIsAdmin(currentUser?.uid ?? null, setIsAdmin);
+    return unsub;
+  }, [currentUser?.uid]);
 
   const requireUser = (): SessionUser => {
     if (!currentUser) throw new Error("Not signed in");
@@ -114,20 +144,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   return (
     <DataContext.Provider
       value={{
         topics,
         topicsLoading,
+        topicsError,
         addTopic,
         addReply,
         toggleLike,
         currentUser,
         authLoading,
+        isAdmin,
         signUp,
         signIn,
         signInWithGoogle,
         signOut,
+        resetPassword,
+        deletePost: deletePostFn,
+        deleteTopic: deleteTopicFn,
+        setTopicLocked: setTopicLockedFn,
+        banUser: banUserFn,
+        unbanUser: unbanUserFn,
       }}
     >
       {children}
