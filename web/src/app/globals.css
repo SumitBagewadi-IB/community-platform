@@ -562,6 +562,17 @@ button { font: inherit; }
   opacity: 0.55;
 }
 
+.site-footer__disclaimer p {
+  margin: 0 0 0.5rem;
+}
+.site-footer__disclaimer p:last-child {
+  margin-bottom: 1rem;
+}
+.site-footer__disclaimer a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 /* ---- Responsive ---------------------------------------------------------- */
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
