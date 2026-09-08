@@ -1,27 +1,51 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import CategoryBadge from "@/components/CategoryBadge";
 import LikeButton from "@/components/LikeButton";
 import ReplyBar from "@/components/ReplyBar";
-import { useData } from "@/components/DataProvider";
 import { useUI } from "@/components/UIProvider";
 import { getCategory } from "@/lib/data";
+import { subscribeTopic, subscribeTopicPosts, type TopicSummary, type Post } from "@/lib/firestore";
+import { formatRelativeTime } from "@/lib/format";
 
 export default function TopicPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { getTopic } = useData();
-  const { requestComposer, showToast } = useUI();
-  const topic = getTopic(slug);
+  const { showToast } = useUI();
+  const [topic, setTopic] = useState<TopicSummary | null | undefined>(undefined);
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    const unsub = subscribeTopic(slug, setTopic);
+    return unsub;
+  }, [slug]);
+
+  useEffect(() => {
+    const unsub = subscribeTopicPosts(slug, setPosts);
+    return unsub;
+  }, [slug]);
 
   useEffect(() => {
     if (topic) document.title = `${topic.title} — Indiabulls Securities Community`;
   }, [topic]);
 
-  if (!topic) notFound();
+  if (topic === undefined) {
+    return (
+      <div className="container">
+        <div className="layout">
+          <Sidebar />
+          <main>
+            <p style={{ padding: "2rem 0", color: "var(--ib-gray-500)" }}>Loading…</p>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (topic === null) notFound();
 
   const category = getCategory(topic.categorySlug);
 
@@ -53,29 +77,8 @@ export default function TopicPage() {
           </div>
 
           <div className="post-stream">
-            {topic.posts.map((post, i) => (
-              <article className="post-card" key={i}>
-                <div className="avatar">{post.initials}</div>
-                <div>
-                  <div className="post-byline">
-                    <span className="username">{post.author}</span>
-                    {post.isOp && <span className="op-badge">OP</span>}
-                    <time>{post.timeAgo}</time>
-                  </div>
-                  <div className="post-body">
-                    {post.body.map((paragraph, j) => (
-                      <p key={j}>{paragraph}</p>
-                    ))}
-                  </div>
-                  <div className="post-actions">
-                    <LikeButton initialLikes={post.likes} />
-                    <button onClick={() => requestComposer("reply", topic.slug)}>
-                      &#8617; Reply
-                    </button>
-                    <button onClick={handleShare}>&#128279; Share</button>
-                  </div>
-                </div>
-              </article>
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} topicSlug={topic.slug} onShare={handleShare} />
             ))}
           </div>
 
@@ -83,5 +86,40 @@ export default function TopicPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+function PostCard({
+  post,
+  topicSlug,
+  onShare,
+}: {
+  post: Post;
+  topicSlug: string;
+  onShare: () => void;
+}) {
+  const { requestComposer } = useUI();
+
+  return (
+    <article className="post-card">
+      <div className="avatar">{post.authorInitials}</div>
+      <div>
+        <div className="post-byline">
+          <span className="username">{post.authorName}</span>
+          {post.isOp && <span className="op-badge">OP</span>}
+          <time>{formatRelativeTime(post.createdAt)}</time>
+        </div>
+        <div className="post-body">
+          {post.body.split("\n\n").map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
+          ))}
+        </div>
+        <div className="post-actions">
+          <LikeButton topicSlug={topicSlug} postId={post.id} likedBy={post.likedBy} />
+          <button onClick={() => requestComposer("reply", topicSlug)}>&#8617; Reply</button>
+          <button onClick={onShare}>&#128279; Share</button>
+        </div>
+      </div>
+    </article>
   );
 }

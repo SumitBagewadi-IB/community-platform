@@ -6,10 +6,9 @@ import { useSearchParams } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import TopicTable, { Pill } from "@/components/TopicTable";
 import { useData } from "@/components/DataProvider";
-import { parseCount } from "@/lib/data";
 
 function HomeContent() {
-  const { topics } = useData();
+  const { topics, topicsLoading } = useData();
   const searchParams = useSearchParams();
   const q = searchParams.get("q")?.trim() ?? "";
   const sort = searchParams.get("sort") === "top" ? "top" : "latest";
@@ -22,8 +21,11 @@ function HomeContent() {
     list = topics.filter((t) => t.title.toLowerCase().includes(needle));
     heading = `Search results for "${q}"`;
   } else if (sort === "top") {
-    list = [...topics].sort((a, b) => parseCount(b.views) - parseCount(a.views));
+    list = [...topics].sort((a, b) => b.views - a.views);
     heading = "Top Topics";
+  } else {
+    // Pinned topics always float to the top, regardless of recent activity.
+    list = [...topics].sort((a, b) => Number(b.pinned) - Number(a.pinned));
   }
 
   const pills: Pill[] | undefined = q
@@ -34,7 +36,7 @@ function HomeContent() {
         {
           label: "Unread",
           disabled: true,
-          title: "Needs sign-in + a backend to track what you've read — coming with the backend build",
+          title: "Per-user read tracking isn't built yet — coming in a future pass",
         },
       ];
 
@@ -48,7 +50,15 @@ function HomeContent() {
               <Link href="/">&larr; Clear search</Link>
             </p>
           )}
-          <TopicTable topics={list} heading={heading} pills={pills} />
+          {topicsLoading ? (
+            <div className="content-card">
+              <p style={{ padding: "2rem 1.25rem", color: "var(--ib-gray-500)", margin: 0 }}>
+                Loading topics…
+              </p>
+            </div>
+          ) : (
+            <TopicTable topics={list} heading={heading} pills={pills} />
+          )}
         </main>
       </div>
     </div>

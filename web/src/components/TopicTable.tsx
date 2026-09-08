@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Topic } from "@/lib/data";
+import { TopicSummary } from "@/lib/firestore";
+import { formatCount, formatRelativeTime } from "@/lib/format";
 import CategoryBadge from "./CategoryBadge";
 
 export type Pill = {
@@ -15,7 +16,7 @@ export default function TopicTable({
   heading,
   pills,
 }: {
-  topics: Topic[];
+  topics: TopicSummary[];
   heading: string;
   pills?: Pill[];
 }) {
@@ -71,9 +72,9 @@ export default function TopicTable({
                     <CategoryBadge categorySlug={topic.categorySlug} />
                   </div>
                 </td>
-                <td className="num">{topic.replies}</td>
-                <td className="num">{topic.views}</td>
-                <td className="num activity">{topic.activity}</td>
+                <td className="num">{topic.repliesCount}</td>
+                <td className="num">{formatCount(topic.views)}</td>
+                <td className="num activity">{formatRelativeTime(topic.lastActivityAt)}</td>
               </tr>
             ))}
           </tbody>

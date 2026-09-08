@@ -14,11 +14,14 @@ export default function ComposerModal() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [categorySlug, setCategorySlug] = useState(categories[0].slug);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const reset = () => {
     setTitle("");
     setBody("");
     setCategorySlug(categories[0].slug);
+    setError("");
   };
 
   const handleClose = () => {
@@ -26,18 +29,26 @@ export default function ComposerModal() {
     closeComposer();
   };
 
-  const handleSubmit = () => {
-    if (composerMode === "topic") {
-      if (!title.trim() || !body.trim()) return;
-      const newTopic = addTopic(title.trim(), body.trim(), categorySlug);
-      reset();
-      closeComposer();
-      router.push(`/topic/${newTopic.slug}`);
-    } else {
-      if (!body.trim() || !composerTopicSlug) return;
-      addReply(composerTopicSlug, body.trim());
-      reset();
-      closeComposer();
+  const handleSubmit = async () => {
+    setError("");
+    setSubmitting(true);
+    try {
+      if (composerMode === "topic") {
+        if (!title.trim() || !body.trim()) return;
+        const slug = await addTopic(title.trim(), body.trim(), categorySlug);
+        reset();
+        closeComposer();
+        router.push(`/topic/${slug}`);
+      } else {
+        if (!body.trim() || !composerTopicSlug) return;
+        await addReply(composerTopicSlug, body.trim());
+        reset();
+        closeComposer();
+      }
+    } catch {
+      setError("Couldn't post that — please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -94,12 +105,16 @@ export default function ComposerModal() {
           autoFocus={composerMode === "reply"}
         />
 
+        {error && (
+          <p style={{ color: "var(--ib-danger)", fontSize: "0.82rem", margin: "0.5rem 0 0" }}>{error}</p>
+        )}
+
         <div className="composer-panel__footer">
           <button className="btn btn-outline" onClick={handleClose}>
             Cancel
           </button>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={!canSubmit}>
-            {composerMode === "topic" ? "Post Topic" : "Post Reply"}
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={!canSubmit || submitting}>
+            {submitting ? "Posting…" : composerMode === "topic" ? "Post Topic" : "Post Reply"}
           </button>
         </div>
       </div>

@@ -1,0 +1,52 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Categories are curated, not user-created — public read, no client writes.
+    match /categories/{categorySlug} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /topics/{topicSlug} {
+      allow read: if true;
+
+      // Must be signed in, and can only author content as yourself.
+      allow create: if request.auth != null
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.categorySlug is string;
+
+      // Replying bumps repliesCount/lastActivityAt on the parent topic;
+      // no editing title/author/category from the client.
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['repliesCount', 'lastActivityAt', 'views']);
+
+      allow delete: if false;
+
+      match /posts/{postId} {
+        allow read: if true;
+
+        allow create: if request.auth != null
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.body is string
+          && request.resource.data.body.size() > 0;
+
+        // Only the likedBy field may change post-creation (for likes),
+        // and only by adding/removing the caller's own uid.
+        allow update: if request.auth != null
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
+          && request.resource.data.likedBy.toSet()
+               .difference(resource.data.likedBy.toSet())
+               .union(resource.data.likedBy.toSet()
+                 .difference(request.resource.data.likedBy.toSet()))
+               .hasOnly([request.auth.uid]);
+
+        allow delete: if false;
+      }
+    }
+  }
+}
